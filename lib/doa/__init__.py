@@ -113,21 +113,6 @@ from .srp import *
 from .music import *
 from .gevdmusic import *
 from .gsvdmusic import *
-from .normmusic import *
-from .cssm import *
-from .waves import *
-from .tops import *
 from .frida import *
 from .grid import *
 from .utils import *
-
-# Create this dictionary as a shortcut to different algorithms
-algorithms = {
-    "SRP": SRP,
-    "MUSIC": MUSIC,
-    "NormMUSIC": NormMUSIC,
-    "CSSM": CSSM,
-    "WAVES": WAVES,
-    "TOPS": TOPS,
-    "FRIDA": FRIDA,
-}
