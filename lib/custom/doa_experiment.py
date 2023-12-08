@@ -18,9 +18,9 @@ def create_doa_object(method, source_noise_thresh, mic_positions, fs, nfft, X_no
     if method == "MUSIC":
         doa = MUSIC(**common_params)
     elif method == "GEVD-MUSIC":
-        doa = GevdMUSIC(**common_params, X_noise=X_noise)
+        doa = GevdMUSIC(**common_params)
     elif method == "GSVD-MUSIC":
-        doa = GsvdMUSIC(**common_params, X_noise=X_noise)
+        doa = GsvdMUSIC(**common_params)
     else:
         raise ValueError(f"Unknown method: {method}")
     return doa
