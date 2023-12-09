@@ -4,7 +4,7 @@ sys.path.append("../")
 from lib.doa import MUSIC, GevdMUSIC, GsvdMUSIC
 
 
-def create_doa_object(method, source_noise_thresh, mic_positions, fs, nfft, X_noise, output_dir):
+def create_doa_object(method, source_noise_thresh, mic_positions, fs, nfft, output_dir):
     common_params = {
         "L": mic_positions,
         "fs": fs,
@@ -15,11 +15,11 @@ def create_doa_object(method, source_noise_thresh, mic_positions, fs, nfft, X_no
         "source_noise_thresh": source_noise_thresh,
         "output_dir": output_dir,
     }
-    if method == "MUSIC":
+    if method == "SEVD":
         doa = MUSIC(**common_params)
-    elif method == "GEVD-MUSIC":
+    elif method == "GEVD":
         doa = GevdMUSIC(**common_params)
-    elif method == "GSVD-MUSIC":
+    elif method == "GSVD":
         doa = GsvdMUSIC(**common_params)
     else:
         raise ValueError(f"Unknown method: {method}")
