@@ -56,30 +56,17 @@ def play_audio(audio_data: np.ndarray, fs: int) -> None:
     display(Audio(audio_data, rate=fs))
 
 
-def plot_music_spectrum(doa,
-                        output_dir: Optional[str] = None,
-                        display: bool = False) -> None:
+def plot_music_spectra(doa, output_dir: str) -> None:
     estimated_angles = doa.grid.azimuth
-    music_spectrum = doa.grid.values
-    plt.figure(figsize=(12, 5))
+    music_spectra = doa.spectra_storage
 
-    plt.subplot(1, 2, 1, projection="polar")
-    plt.polar(estimated_angles, music_spectrum)
+    for i in range(len(music_spectra)):
+        plt.polar(estimated_angles, music_spectra[i], color="blue", alpha=0.2)
+
     plt.title("MUSIC Spectrum (Polar Coordinates)")
     plt.grid(True)
-
-    plt.subplot(1, 2, 2)
-    plt.plot(np.rad2deg(estimated_angles), music_spectrum)
-    plt.title("MUSIC Spectrum (Cartesian Coordinates)")
-    plt.xlabel("Angle (degrees)")
-    plt.ylabel("Magnitude")
-    plt.grid(True)
-
     plt.tight_layout()
-    if output_dir is not None:
-        plt.savefig(f"{output_dir}/music_spectrum.png")
-    if display:
-        plt.show()
+    plt.savefig(f"{output_dir}/music_spectrum.png")
     plt.close()
 
 

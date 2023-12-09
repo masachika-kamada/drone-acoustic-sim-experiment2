@@ -2,13 +2,11 @@ import argparse
 import os
 import time
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pyroomacoustics as pra
 
 from lib.custom import create_doa_object, perform_fft_on_frames
 from src.file_io import load_config, load_signal_from_wav
-from src.visualization_tools import plot_music_spectrum
+from src.visualization_tools import plot_music_spectra
 from generate_acoustic_sim import Drone
 
 
@@ -25,6 +23,9 @@ def main(config, output_dir):
     X_source = perform_fft_on_frames(signal_source, window_size, hop_size)
     X_noise = perform_fft_on_frames(signal_noise, window_size, hop_size)
 
+    print("X_source.shape", X_source.shape)
+    print("X_noise.shape", X_noise.shape)
+
     config_doa = config["doa"]
     doa = create_doa_object(
         method=config_doa["method"],
@@ -32,11 +33,15 @@ def main(config, output_dir):
         mic_positions=drone.mic_positions,
         fs=config["pra"]["room"]["fs"],
         nfft=window_size,
-        X_noise=X_noise,
         output_dir=output_dir,
     )
-    doa.locate_sources(X_source, X_noise, freq_range=config_doa["freq_range"], auto_identify=True)
-    plot_music_spectrum(doa, output_dir=output_dir)
+    frame_length = 100
+    for f in range(0, X_source.shape[2], frame_length // 4):
+        xs = X_source[:, :, f : f + frame_length]
+        xn = X_noise[:, :, f : f + frame_length]
+        doa.locate_sources(xs, xn, freq_range=config_doa["freq_range"], auto_identify=True)
+    plot_music_spectra(doa, output_dir=output_dir)
+    np.save(f"{output_dir}/ratio.npy", np.array(doa.dval_ratio_strage))
 
 
 if __name__ == "__main__":
