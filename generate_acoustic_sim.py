@@ -66,7 +66,7 @@ class Room:
             [int( room_dim[0] / 2), room_dim[1]],
             [int( room_dim[0] / 2), 0],
         ]).T
-        corners = self._generate_rough_floor(corners, config_room["floor_roughness"])
+        corners = self._generate_floor(corners, config_room["floor_roughness"])
         self.fs = config_room["fs"]
         self.snr = config_room["snr"]
 
@@ -78,35 +78,51 @@ class Room:
         max_order, materials = self._load_reverberation(config_noise_template, len(corners[0]))
         self.room_noise_template = self._create_room(corners, max_order, materials)
 
-    def _generate_rough_floor(self, corners, config):
+    def _generate_floor(self, corners, config):
         shape = config["shape"]
-        interval = config["interval"]
-        height = config["height"]
+        if shape == "flat":
+            return corners
+
         corners = corners.T  # [x, y]
         x_min = corners[0, 0]
         x_max = corners[-1, 0]
         y = corners[0, 1]
 
-        n_rough = int((x_max - x_min) / interval)
-        interval = (x_max - x_min) / n_rough
+        if shape in ["triangle", "square"]:
+            new_corners = []
+            interval = config["interval"]
+            height = config["height"]
+            n_rough = int((x_max - x_min) / interval)
+            interval = (x_max - x_min) / n_rough
 
-        new_corners = []
-        for i in range(1, n_rough):
-            x = x_max - i * interval
-            if shape == "triangle":
-                if i % 2 == 0:
-                    new_corners.append([x, y])
-                else:
-                    new_corners.append([x, y + height])
-            elif shape == "square":
-                if i % 2 == 0:
-                    new_corners.append([x, y + height])
-                    new_corners.append([x, y])
-                else:
-                    new_corners.append([x, y])
-                    new_corners.append([x, y + height])
+            for i in range(1, n_rough):
+                x = x_max - i * interval
+                if shape == "triangle":
+                    if i % 2 == 0:
+                        new_corners.append([x, y])
+                    else:
+                        new_corners.append([x, y + height])
+                elif shape == "square":
+                    if i % 2 == 0:
+                        new_corners.append([x, y + height])
+                        new_corners.append([x, y])
+                    else:
+                        new_corners.append([x, y])
+                        new_corners.append([x, y + height])
+            new_corners = np.array(new_corners)
 
-        new_corners = np.array(new_corners)
+        elif shape == "random":
+            seed = config["seed"]
+            np.random.seed(seed)
+            min_interval = config["min_interval"]
+            max_interval = config["max_interval"]
+            n_max = int((x_max - x_min) // min_interval - 1)
+            x_rand = np.random.rand(n_max) * (max_interval - min_interval) + min_interval
+            x_rand = x_max - np.cumsum(x_rand)
+            x_rand = x_rand[x_rand >= x_min + min_interval]
+            y_rand = np.random.rand(len(x_rand)) * max_interval * 0.5
+            new_corners = np.vstack([x_rand, y_rand]).T
+
         new_corners = np.vstack([corners, new_corners])
         return new_corners.T
 
@@ -180,9 +196,6 @@ def main(config, output_dir):
 
     write_signal_to_wav(signal_source, f"{output_dir}/source.wav", room.fs)
     write_signal_to_wav(signal_noise, f"{output_dir}/noise_template.wav", room.fs)
-
-    print(f"signal_source.shape: {signal_source.shape}")
-    print(f"signal_noise.shape: {signal_noise.shape}")
 
 
 def confirm_execution(output_dir):
