@@ -73,10 +73,10 @@ class Room:
         self.pra_material = config_room["floor"]["material"]
 
         materials = self._load_materials(len(corners[0]), self.pra_material)
-        self.room_source = self._create_room(corners, materials, self.max_order)
-        self.room_ncm_rev = self._create_room(corners, materials, self.max_order)
+        self.room_source = self._create_room(corners, self.max_order, materials)
+        self.room_ncm_rev = self._create_room(corners, self.max_order, materials)
         materials = self._load_materials(len(corners[0]), None)
-        self.room_ncm_no_rev = self._create_room(corners, materials, 0)
+        self.room_ncm_no_rev = self._create_room(corners, 0, materials)
 
     def _generate_floor(self, corners, config):
         shape = config["shape"]
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     parser.add_argument("--config_dir", type=str, required=True, help="Directory containing the config.yaml file")
     args = parser.parse_args()
 
-    config_dir = f"experiments/{args.config_dir}"
+    config_dir = f"{args.config_dir}"
     config = load_config(f"{config_dir}/config.yaml")
     output_dir = f"{config_dir}/simulation"
     if confirm_execution(output_dir):

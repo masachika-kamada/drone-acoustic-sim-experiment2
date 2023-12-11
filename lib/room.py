@@ -27,7 +27,7 @@ def custom_plot(
         absorption = wall.absorption
 
         if np.array(absorption).mean() != 1:
-            color = "red"
+            color = "brown"
             ax.plot(xs, ys, color=color)
 
     if self.mic_array is not None:
