@@ -66,17 +66,17 @@ class Room:
             [int( room_dim[0] / 2), room_dim[1]],
             [int( room_dim[0] / 2), 0],
         ]).T
-        corners = self._generate_floor(corners, config_room["floor_roughness"])
+        corners = self._generate_floor(corners, config_room["floor"])
         self.fs = config_room["fs"]
         self.snr = config_room["snr"]
+        self.max_order = config_room["max_order"]
+        self.pra_material = config_room["floor"]["material"]
 
-        config_source = config["source"]
-        max_order, materials = self._load_reverberation(config_source, len(corners[0]))
-        self.room_source = self._create_room(corners, max_order, materials)
-
-        config_noise_template = config["noise_template"]
-        max_order, materials = self._load_reverberation(config_noise_template, len(corners[0]))
-        self.room_noise_template = self._create_room(corners, max_order, materials)
+        materials = self._load_materials(len(corners[0]), self.pra_material)
+        self.room_source = self._create_room(corners, materials, self.max_order)
+        self.room_ncm_rev = self._create_room(corners, materials, self.max_order)
+        materials = self._load_materials(len(corners[0]), None)
+        self.room_ncm_no_rev = self._create_room(corners, materials, 0)
 
     def _generate_floor(self, corners, config):
         shape = config["shape"]
@@ -127,14 +127,13 @@ class Room:
         return new_corners.T
 
 
-    def _load_reverberation(self, config, num_corners):
-        max_order = config["max_order"]
-        floor_material = self._create_materials(config["floor_material"])
+    def _load_materials(self, num_corners, floor_material):
+        floor_material = self._create_materials(floor_material)
         no_wall_material = self._create_materials()
         materials = [floor_material] + [no_wall_material] * 3 + [floor_material] * (num_corners - 4)
         # listを逆順にする
         materials = materials[::-1]
-        return max_order, materials
+        return materials
 
     def _create_materials(self, m=None):
         return pra.Material(energy_absorption=1.0) if m is None else pra.Material(m)
@@ -143,36 +142,37 @@ class Room:
         return pra.Room.from_corners(corners, fs=self.fs, max_order=max_order, materials=materials)
 
     def place_microphones(self, mic_positions):
-        mic_array_s = pra.MicrophoneArray(mic_positions, self.fs)
-        mic_array_n = pra.MicrophoneArray(mic_positions, self.fs)
-        self.room_source.add_microphone_array(mic_array_s)
-        self.room_noise_template.add_microphone_array(mic_array_n)
+        self.room_source.add_microphone_array(pra.MicrophoneArray(mic_positions, self.fs))
+        self.room_ncm_rev.add_microphone_array(pra.MicrophoneArray(mic_positions, self.fs))
+        self.room_ncm_no_rev.add_microphone_array(pra.MicrophoneArray(mic_positions, self.fs))
 
     def place_source(self, voice, drone):
         for signal, position in voice.data:
             self.room_source.add_source(position, signal=signal)
         for signal, position in drone.data:
             self.room_source.add_source(position, signal=signal)
-            self.room_noise_template.add_source(position, signal=signal)
+            self.room_ncm_rev.add_source(position, signal=signal)
+            self.room_ncm_no_rev.add_source(position, signal=signal)
 
     def simulate(self, output_dir):
         t0 = time.time()
         self.room_source.simulate(snr=self.snr)
         print(f"Room simulation time (source): {time.time() - t0} [sec]")
 
-        t0 = time.time()
-        self.room_noise_template.simulate(snr=self.snr)
-        print(f"Room simulation time (noise): {time.time() - t0} [sec]")
+        self.room_ncm_rev.simulate(snr=self.snr)
+        self.room_ncm_no_rev.simulate(snr=self.snr)
 
         self.room_source.plot()
         plt.savefig(f"{output_dir}/room.png")
         plt.close()
 
-        self.room_noise_template.plot()
+        self.room_ncm_rev.plot()
         plt.savefig(f"{output_dir}/room_noise.png")
         plt.close()
 
-        return self.room_source.mic_array.signals, self.room_noise_template.mic_array.signals
+        return (self.room_source.mic_array.signals,
+                self.room_ncm_rev.mic_array.signals,
+                self.room_ncm_no_rev.mic_array.signals)
 
 
 def main(config, output_dir):
@@ -187,15 +187,13 @@ def main(config, output_dir):
 
     room.place_microphones(drone.mic_positions)
     room.place_source(voice, drone)
-    signal_source, signal_noise = room.simulate(output_dir)
 
     start = int(room.fs * config["processing"]["start_time"])
     end = int(room.fs * config["processing"]["end_time"])
-    signal_source = signal_source[:, start:end]
-    signal_noise = signal_noise[:, start:end]
 
-    write_signal_to_wav(signal_source, f"{output_dir}/source.wav", room.fs)
-    write_signal_to_wav(signal_noise, f"{output_dir}/noise_template.wav", room.fs)
+    for signal, name in zip(room.simulate(output_dir), ["source", "ncm_rev", "ncm_no_rev"]):
+        signal = signal[:, start:end]
+        write_signal_to_wav(signal, f"{output_dir}/{name}.wav", room.fs)
 
 
 def confirm_execution(output_dir):
@@ -213,7 +211,7 @@ if __name__ == "__main__":
 
     config_dir = f"experiments/{args.config_dir}"
     config = load_config(f"{config_dir}/config.yaml")
-    output_dir = f"{config_dir}/output"
+    output_dir = f"{config_dir}/simulation"
     if confirm_execution(output_dir):
         os.makedirs(output_dir, exist_ok=True)
         main(config, output_dir)
