@@ -4,12 +4,13 @@ sys.path.append("../")
 from lib.doa import MUSIC, GevdMUSIC, GsvdMUSIC
 
 
-def create_doa_object(method, source_noise_thresh, mic_positions, fs, nfft, output_dir):
+def create_doa_object(method, source_noise_thresh, mic_positions, fs, nfft, num_src, output_dir):
     common_params = {
         "L": mic_positions,
         "fs": fs,
         "nfft": nfft,
         "c": 343.0,
+        "num_src": num_src,
         "mode": "far",
         "azimuth": np.linspace(-np.pi, np.pi, 360),
         "source_noise_thresh": source_noise_thresh,

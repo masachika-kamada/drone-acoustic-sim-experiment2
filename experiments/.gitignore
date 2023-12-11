@@ -2,5 +2,6 @@ output/
 tmp/
 max_order/
 simulation/
+sevd*/
 gevd*/
 gsvd*/

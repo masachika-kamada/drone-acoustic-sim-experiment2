@@ -75,8 +75,10 @@ class MUSIC(DOA):
         self.frequency_normalization = frequency_normalization
         self.source_noise_thresh = source_noise_thresh
         self.output_dir = output_dir
+        self.spectra_storage = []
+        self.decomposed_values_strage = []
 
-    def _process(self, X, display, save, auto_identify):
+    def _process(self, X, _, auto_identify):
         """
         Perform MUSIC for given frame in order to estimate steered response
         spectrum.
@@ -85,49 +87,44 @@ class MUSIC(DOA):
         self.spatial_spectrum = np.zeros((self.num_freq, self.grid.n_points))
         R = self._compute_correlation_matricesvec(X)
         # subspace decomposition
-        noise_subspace = self._extract_noise_subspace(R, display=display, save=save,
-                                                       auto_identify=auto_identify)
-
+        noise_subspace = self._extract_noise_subspace(R, auto_identify=auto_identify)
         # compute spatial spectrum
         self.spatial_spectrum = self._compute_spatial_spectrum(noise_subspace)
 
         if self.frequency_normalization:
             self._apply_frequency_normalization()
         self.grid.set_values(np.squeeze(np.sum(self.spatial_spectrum, axis=1) / self.num_freq))
+        self.spectra_storage.append(self.grid.values)
 
     def _compute_correlation_matricesvec(self, X):
         # change X such that time frames, frequency microphones is the result
         X = np.transpose(X, axes=[2, 1, 0])
         # select frequency bins
         X = X[..., list(self.freq_bins), :]
-        # Compute PSD and average over time frame
+        # compute PSD and average over time frame
         C_hat = np.matmul(X[..., None], np.conjugate(X[..., None, :]))
-        # Average over time-frames
+        # average over time-frames
         C_hat = np.mean(C_hat, axis=0)
         return C_hat
 
-    def _extract_noise_subspace(self, R, display, save, auto_identify):
-        # Step 1: Eigenvalue decomposition
-        # Eigenvalues and eigenvectors are returned in ascending order; no need to sort.
+    def _extract_noise_subspace(self, R, auto_identify):
+        # eigenvalues and eigenvectors are returned in ascending order; no need to sort.
         decomposed_values, decomposed_vectors = np.linalg.eigh(R)
 
-        # Step 2: Display if flag is True
-        if display or save:
-            self._plot_decomposed_values(decomposed_values, display, save)
+        print(decomposed_values.shape)
+        self.decomposed_values_strage.append(decomposed_values)
 
-        # Step 3: Auto-identify source and noise if flag is True
-        if auto_identify:
-            self.num_src = self._auto_identify(decomposed_values, save)
+        # if auto_identify:
+        #     self.num_src = self._auto_identify(decomposed_values)
 
-        # Step 4: Extract subspace
         noise_subspace = decomposed_vectors[..., :-self.num_src]
 
         return noise_subspace
 
-    def _plot_decomposed_values(self, decomposed_values, display, save):
+    def _plot_decomposed_values(self, decomposed_values):
         import matplotlib.pyplot as plt
 
-        # Visualize the magnitude of decomposed values
+        # visualize the magnitude of decomposed values
         fig, axes = plt.subplots(1, 8, figsize=(15, 8), sharey=True)
         for i in range(8):
             axes[i].plot(decomposed_values[..., i], label=f"Value {i+1}", marker="o", linestyle="")
@@ -138,27 +135,24 @@ class MUSIC(DOA):
         axes[0].set_ylabel("Value Magnitude")
         plt.suptitle("Distribution of Decomposed Values Magnitudes Across Rows")
 
-        if save:
-            plt.savefig(f"{self.output_dir}/decomposed_values.png")
-        if display:
-            plt.show()
+        plt.savefig(f"{self.output_dir}/decomposed_values.png")
         plt.close()
 
-    def _auto_identify(self, decomposed_values, save=True):
+    def _auto_identify(self, decomposed_values):
         """
         Automatically identify the number of sources based on the decomposed values
         of the correlation matrix.
         """
         values_max = np.max(decomposed_values, axis=0)
-        # Compute the ratio between consecutive decomposed values
+        # compute the ratio between consecutive decomposed values
         values_ratio = values_max[1:] / values_max[:-1]
 
         print(f"Decomposed values ratio: {values_ratio}")
         # save the decomposed values ratio
-        if save:
-            np.savetxt(f"{self.output_dir}/decomposed_values_ratio.txt", values_ratio)
+        # np.savetxt(f"{self.output_dir}/decomposed_values_ratio.txt", values_ratio)
+        self.dval_ratio_strage.append(values_ratio)
 
-        # Find the index where the ratio exceeds the threshold or return the last index
+        # find the index where the ratio exceeds the threshold or return the last index
         index = np.argmax(values_ratio > self.source_noise_thresh)
         num_sources = len(values_ratio) - index if index else len(values_ratio)
         return num_sources
@@ -169,7 +163,7 @@ class MUSIC(DOA):
         for f in range(self.num_freq):
             steering_vector_f = self.steering_vector[f, :, :]
             noise_subspace_f = noise_subspace[f, :, :]
-            # Calculate the MUSIC spectrum for each angle and frequency bin
+            # calculate the MUSIC spectrum for each angle and frequency bin
             vector_norm_squared = np.abs(np.sum(np.conj(steering_vector_f) * steering_vector_f, axis=1))
             noise_projection = np.abs(np.sum(
                 np.conj(steering_vector_f) @ noise_subspace_f * (noise_subspace_f.conj().T @ steering_vector_f.T).T,
