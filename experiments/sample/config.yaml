@@ -6,7 +6,7 @@ pra:
     max_order: 6
     floor:
       shape: "random"  # select from {"flat", "triangle", "square", "random"}
-      material: "brickwork"
+      material: "brickwork"  # select from {"brickwork", "hard_surface", "plasterboard", "rough_concrete", "wooden_lining"}
       interval: 0.1
       height: 0.1
       seed: 0
