@@ -3,7 +3,7 @@ import os
 
 from src.class_room import Room
 from src.class_sound import Ambient, Drone, Voice
-from src.file_io import load_config, write_signal_to_wav
+from src.file_io import load_config, write_signal_to_npz
 from src.snr import adjust_snr
 
 
@@ -33,8 +33,8 @@ def main(config, output_dir):
 
     for signal, name in zip(room.simulate(output_dir), ["source", "ncm_rev", "ncm_dir"]):
         signal = signal[:, start:end]
-        # TODO: signalがint16でオーバーフローするのでnpzで保存する
-        write_signal_to_wav(signal, f"{output_dir}/{name}.wav", room.fs)
+        # signalがint16でオーバーフローするのでnpzで保存する
+        write_signal_to_npz(signal, f"{output_dir}/{name}.npz", room.fs)
 
 
 def confirm_execution(output_dir):

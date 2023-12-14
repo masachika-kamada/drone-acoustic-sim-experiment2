@@ -4,7 +4,7 @@ import os
 import numpy as np
 
 from lib.custom import create_doa_object, perform_fft_on_frames
-from src.file_io import load_config, load_signal_from_wav
+from src.file_io import load_config, load_signal_from_npz
 from src.visualization_tools import plot_music_spectra
 from generate_acoustic_sim import Drone
 
@@ -14,8 +14,8 @@ def main(args, config):
     fs = config["pra"]["room"]["fs"]
     drone = Drone(config_drone, fs=fs)
 
-    signal_source = load_signal_from_wav(f"{args.config_dir}/simulation/source.wav", fs)
-    signal_ncm_rev = load_signal_from_wav(f"{args.config_dir}/simulation/ncm_rev.wav", fs)
+    signal_source, fs = load_signal_from_npz(f"{args.config_dir}/simulation/source.npz")
+    signal_ncm_rev, fs = load_signal_from_npz(f"{args.config_dir}/simulation/ncm_rev.npz")
 
     X_source = perform_fft_on_frames(signal_source, args.window_size, args.hop_size)
     X_noise = perform_fft_on_frames(signal_ncm_rev, args.window_size, args.hop_size)
