@@ -1,7 +1,7 @@
 output/
 tmp/
 max_order/
-simulation/
+simulation*/
 sevd*/
 gevd*/
 gsvd*/
