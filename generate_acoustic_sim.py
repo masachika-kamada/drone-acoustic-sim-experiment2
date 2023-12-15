@@ -8,14 +8,9 @@ from src.snr import adjust_snr
 
 
 def main(config, output_dir):
-    config_pra = config["pra"]
-    room = Room(config_pra)
-
-    config_voice = config["voice"]
-    voice = Voice(config_voice, fs=room.fs)
-
-    config_drone = config["drone"]
-    drone = Drone(config_drone, fs=room.fs)
+    room = Room(config["pra"])
+    voice = Voice(config["voice"], fs=room.fs)
+    drone = Drone(config["drone"], fs=room.fs)
 
     config_ambient = config.get("ambient", None)
     ambient = Ambient(config_ambient, fs=room.fs) if config_ambient is not None else None

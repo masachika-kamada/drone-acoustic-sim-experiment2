@@ -16,16 +16,18 @@ def calculate_power(signal: np.ndarray) -> float:
     return np.sum(signal ** 2) / len(signal)
 
 
-def calculate_snr(signal_s: np.ndarray, signal_n: np.ndarray) -> float:
-    power_s = calculate_power(signal_s)
-    power_n = calculate_power(signal_n)
+def calculate_snr(signal_s: np.ndarray, signal_n: np.ndarray,
+                  n_data_s: int, n_data_n: int) -> float:
+    power_s = calculate_power(signal_s) / n_data_s
+    power_n = calculate_power(signal_n) / n_data_n
     snr = 10 * np.log10(power_s / power_n)
     return snr
 
 
-def calculate_coef(signal_s: np.ndarray, signal_n: np.ndarray, snr_target: float) -> float:
-    power_s = calculate_power(signal_s)
-    power_n = calculate_power(signal_n)
+def calculate_coef(signal_s: np.ndarray, signal_n: np.ndarray,
+                   n_data_s: int, n_data_n: int, snr_target: float) -> float:
+    power_s = calculate_power(signal_s) / n_data_s
+    power_n = calculate_power(signal_n) / n_data_n
     # logの真数
     argument = 10 ** (snr_target / 10)
     # 係数の計算
@@ -64,10 +66,11 @@ def adjust_snr(room: Room, source: Voice,
     """雑音をSNRに合わせて調整する"""
     mic_loc = room.rooms["source"].mic_array.center
     rec_s, rec_n = get_sn_rec(room, source, noise, mic_loc)
-    print(f"SNR before adjustment: {calculate_snr(rec_s, rec_n):.3f}")
+    snr = calculate_snr(rec_s, rec_n, source.n_data, noise.n_data)
+    print(f"SNR before adjustment: {snr:.3f}")
     confirm_rec(room, source, noise, mic_loc, f"{output_dir}/before")
 
-    coef = calculate_coef(rec_s, rec_n, snr_target)
+    coef = calculate_coef(rec_s, rec_n, source.n_data, noise.n_data, snr_target)
     print(f"Adjustment coefficient: {coef}")
     data_adjusted = []
     for signal, position in noise.data:
@@ -75,5 +78,6 @@ def adjust_snr(room: Room, source: Voice,
     noise.data = data_adjusted
 
     rec_s, rec_n = get_sn_rec(room, source, noise, mic_loc)
-    print(f"SNR after adjustment: {calculate_snr(rec_s, rec_n):.3f}")
+    snr = calculate_snr(rec_s, rec_n, source.n_data, noise.n_data)
+    print(f"SNR after adjustment: {snr:.3f}")
     confirm_rec(room, source, noise, mic_loc, f"{output_dir}/after")

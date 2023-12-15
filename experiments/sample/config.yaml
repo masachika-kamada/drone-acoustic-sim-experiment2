@@ -17,7 +17,9 @@ voice:
     - file_path: "data/raw/sample/arctic_a0001.wav"
       position: [3.5, 0.5]
       start_time: 0
-      target_rms: 0.1
+    - file_path: "data/raw/sample/arctic_a0002.wav"
+      position: [-0.5, 0.4]
+      start_time: 0.1
 
 drone:
   mic_positions:
@@ -26,9 +28,9 @@ drone:
     phi0: 0
     radius: 0.1
   propeller:
-    offset: [0, 0.5]
+    offset: [0.5, 0.2]
     width: 0.45
-  snr: 0
+  snr: 1
   source:
     - file_path: "data/processed/propeller/p2000_2/dst.wav"
       start_time: 1

@@ -35,8 +35,11 @@ class Drone(AudioLoader):
         config_propeller = config.get("propeller", {})
         self.offset = np.array(config_propeller.get("offset", [0, 0]))
         self.width = config_propeller.get("width", 0.1)
+        # configにsourceのpositionを追加
         self._adjust_source_positions(config, config_mic_positions["center"])
         super().__init__(config, fs)
+        # ドローンは1つの音源として扱う
+        self.n_data = 1
 
     def _create_mic_positions(self, config):
         return pra.circular_2D_array(
