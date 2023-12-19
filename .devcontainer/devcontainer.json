@@ -15,7 +15,8 @@
                 "visualstudioexptteam.vscodeintellicode",
                 "magicstack.magicpython",
                 "christian-kohler.path-intellisense",
-                "shardulm94.trailing-spaces"
+                "shardulm94.trailing-spaces",
+                "eamodio.gitlens"
             ]
         }
     }

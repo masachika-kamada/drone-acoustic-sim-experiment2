@@ -13,7 +13,7 @@ class GsvdMUSIC(MUSIC):
     .. note:: Run locate_source() to apply the GSVD-MUSIC algorithm.
     """
 
-    def _process(self, X, X_noise, auto_identify):
+    def _process(self, X, X_noise, auto_identify, **kwargs):
         # compute steered response
         self.spatial_spectrum = np.zeros((self.num_freq, self.grid.n_points))
         # Compute source and noise correlation matrices
@@ -41,7 +41,6 @@ class GsvdMUSIC(MUSIC):
         decomposed_values = decomposed_values[::-1, ::-1]
         decomposed_vectors = X[..., ::-1]
 
-        print(decomposed_values.shape)
         self.decomposed_values_strage.append(decomposed_values)
 
         # if auto_identify:

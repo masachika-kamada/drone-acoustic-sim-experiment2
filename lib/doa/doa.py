@@ -300,7 +300,7 @@ class DOA(object):
 
     def locate_sources(
         self, X, X_noise, num_src=None, freq_range=[500.0, 4000.0], freq_bins=None, freq_hz=None,
-        auto_identify=False
+        auto_identify=False, **kwargs
     ):
         """
         Locate source(s) using corresponding algorithm.
@@ -361,7 +361,7 @@ class DOA(object):
         self.grid.set_values(0.0)
 
         # Run the algorithm
-        self._process(X, X_noise, auto_identify=auto_identify)
+        self._process(X, X_noise, auto_identify=auto_identify, **kwargs)
 
         # locate sources
         from .frida import FRIDA

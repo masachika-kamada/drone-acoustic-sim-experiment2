@@ -78,7 +78,7 @@ class MUSIC(DOA):
         self.spectra_storage = []
         self.decomposed_values_strage = []
 
-    def _process(self, X, _, auto_identify):
+    def _process(self, X, _, auto_identify, **kwargs):
         """
         Perform MUSIC for given frame in order to estimate steered response
         spectrum.
@@ -111,7 +111,6 @@ class MUSIC(DOA):
         # eigenvalues and eigenvectors are returned in ascending order; no need to sort.
         decomposed_values, decomposed_vectors = np.linalg.eigh(R)
 
-        print(decomposed_values.shape)
         self.decomposed_values_strage.append(decomposed_values)
 
         # if auto_identify:
