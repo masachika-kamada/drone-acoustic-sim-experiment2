@@ -16,30 +16,88 @@ def main(args, config):
 
     signal_source, fs = load_signal_from_npz(f"{args.config_dir}/simulation/source.npz")
     signal_ncm_rev, fs = load_signal_from_npz(f"{args.config_dir}/simulation/ncm_rev.npz")
+    signal_ncm_dir, fs = load_signal_from_npz(f"{args.config_dir}/simulation/ncm_dir.npz")
 
     X_source = perform_fft_on_frames(signal_source, args.window_size, args.hop_size)
-    X_noise = perform_fft_on_frames(signal_ncm_rev, args.window_size, args.hop_size)
+    X_ncm_rev = perform_fft_on_frames(signal_ncm_rev, args.window_size, args.hop_size)
+    X_ncm_dir = perform_fft_on_frames(signal_ncm_dir, args.window_size, args.hop_size)
 
     print("X_source.shape", X_source.shape)
-    print("X_noise.shape", X_noise.shape)
+    print("X_ncm_rev.shape", X_ncm_rev.shape)
+    print("X_ncm_dir.shape", X_ncm_dir.shape)
 
-    for method in ["SEVD", "GEVD", "GSVD"]:
-        output_dir = f"{args.config_dir}/{method}"
+    num_voice = len(config["voice"]["source"])
+    num_ambient = len(config.get("ambient", {}).get("source", []))
+    num_src = num_voice + num_ambient
+    frame_length = 100
+
+    # SEVD
+    method = "SEVD"
+    output_dir = f"{args.config_dir}/{method}"
+    os.makedirs(output_dir, exist_ok=True)
+    doa = create_doa_object(
+        method=method,
+        source_noise_thresh=100,
+        mic_positions=drone.mic_positions,
+        fs=fs,
+        nfft=args.window_size,
+        num_src=num_src,
+        output_dir=output_dir,
+    )
+    for f in range(0, X_source.shape[2], frame_length // 4):
+        xs = X_source[:, :, f : f + frame_length]
+        doa.locate_sources(xs, None, freq_range=args.freq_range, auto_identify=True)
+    plot_music_spectra(doa, output_dir=output_dir)
+    np.save(f"{output_dir}/decomposed_values.npy", np.array(doa.decomposed_values_strage))
+
+    # GEVD
+    method = "GEVD"
+    doa = create_doa_object(
+        method=method,
+        source_noise_thresh=100,
+        mic_positions=drone.mic_positions,
+        fs=fs,
+        nfft=args.window_size,
+        num_src=num_src,
+        output_dir="",
+    )
+
+    # incremental
+    frame_s = 140
+    frame_t_n = 90
+    output_dir = f"{args.config_dir}/{method}_incremental"
+    doa.output_dir = output_dir
+    os.makedirs(output_dir, exist_ok=True)
+    for f in range(0, X_source.shape[2] - frame_s - frame_t_n, frame_length // 4):
+        xn = X_source[:, :, f : f + frame_t_n]
+        f2 = f + frame_s + frame_t_n
+        xs = X_source[:, :, f2 : f2 + frame_length]
+        doa.locate_sources(xs, xn, freq_range=args.freq_range, auto_identify=True)
+    plot_music_spectra(doa, output_dir=output_dir)
+    np.save(f"{output_dir}/decomposed_values.npy", np.array(doa.decomposed_values_strage))
+
+    # ans
+    for basename, X_ncm in zip(["rev", "dir"], [X_ncm_rev, X_ncm_dir]):
+        output_dir = f"{args.config_dir}/{method}_ans_{basename}"
+        doa.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
-        doa = create_doa_object(
-            method=method,
-            source_noise_thresh=100,
-            mic_positions=drone.mic_positions,
-            fs=fs,
-            nfft=args.window_size,
-            num_src=len(config["voice"]["source"]),
-            output_dir=output_dir,
-        )
-        frame_length = 100
         for f in range(0, X_source.shape[2], frame_length // 4):
             xs = X_source[:, :, f : f + frame_length]
-            xn = X_noise[:, :, f : f + frame_length]
+            xn = X_ncm[:, :, f : f + frame_length]
             doa.locate_sources(xs, xn, freq_range=args.freq_range, auto_identify=True)
+        plot_music_spectra(doa, output_dir=output_dir)
+        np.save(f"{output_dir}/decomposed_values.npy", np.array(doa.decomposed_values_strage))
+
+    # frame_length = 200
+    # diff
+    for basename, X_ncm in zip(["rev", "dir"], [X_ncm_rev, X_ncm_dir]):
+        output_dir = f"{args.config_dir}/{method}_diff_{basename}"
+        doa.output_dir = output_dir
+        os.makedirs(output_dir, exist_ok=True)
+        for f in range(0, X_source.shape[2], frame_length // 4):
+            xs = X_source[:, :, f : f + frame_length]
+            xn = X_ncm[:, :, f : f + frame_length]
+            doa.locate_sources(xs, xn, freq_range=args.freq_range, auto_identify=True, ncm_diff=0.05)
         plot_music_spectra(doa, output_dir=output_dir)
         np.save(f"{output_dir}/decomposed_values.npy", np.array(doa.decomposed_values_strage))
 
