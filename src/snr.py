@@ -37,7 +37,7 @@ def calculate_coef(signal_s: np.ndarray, signal_n: np.ndarray,
 
 def get_sn_rec(room: Room, source: Voice,
                noise: Union[Drone, Ambient], mic_loc: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    test_room_s = pra.Room.from_corners(room.corners, fs=room.fs, max_order=0)
+    test_room_s = pra.Room.from_corners(room.corners, fs=room.fs, max_order=room.max_order)
     test_room_n = pra.Room.from_corners(room.corners, fs=room.fs, max_order=0)
     for test_room, signal_data in zip([test_room_s, test_room_n], [source, noise]):
         for signal, position in signal_data.data:
@@ -49,7 +49,7 @@ def get_sn_rec(room: Room, source: Voice,
 
 def confirm_rec(room: Room, source: Voice,
                 noise: Union[Drone, Ambient], mic_loc: np.ndarray, filename: str) -> None:
-    test_room = pra.Room.from_corners(room.corners, fs=room.fs, max_order=0)
+    test_room = pra.Room.from_corners(room.corners, fs=room.fs, max_order=room.max_order)
     for signal, position in source.data:
         test_room.add_source(position, signal=signal)
     for signal, position in noise.data:
