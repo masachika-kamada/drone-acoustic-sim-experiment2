@@ -77,6 +77,7 @@ class MUSIC(DOA):
         self.output_dir = output_dir
         self.spectra_storage = []
         self.decomposed_values_strage = []
+        self.decomposed_vectors_strage = []
 
     def _process(self, X, _, auto_identify, **kwargs):
         """
@@ -112,6 +113,7 @@ class MUSIC(DOA):
         decomposed_values, decomposed_vectors = np.linalg.eigh(R)
 
         self.decomposed_values_strage.append(decomposed_values)
+        self.decomposed_vectors_strage.append(decomposed_vectors)
 
         # if auto_identify:
         #     self.num_src = self._auto_identify(decomposed_values)

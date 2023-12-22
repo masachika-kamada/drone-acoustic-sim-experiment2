@@ -28,7 +28,8 @@ def main(args, config):
 
     num_voice = len(config["voice"]["source"])
     num_ambient = len(config.get("ambient", {}).get("source", []))
-    num_src = num_voice + num_ambient
+    # num_src = num_voice + num_ambient
+    num_src = num_voice + num_ambient + 1
     frame_length = 100
 
     # SEVD
@@ -49,6 +50,7 @@ def main(args, config):
         doa.locate_sources(xs, None, freq_range=args.freq_range, auto_identify=True)
     plot_music_spectra(doa, output_dir=output_dir)
     np.save(f"{output_dir}/decomposed_values.npy", np.array(doa.decomposed_values_strage))
+    np.save(f"{output_dir}/decomposed_vectors.npy", np.array(doa.decomposed_vectors_strage))
 
     # GEVD
     method = "GEVD"
@@ -75,6 +77,7 @@ def main(args, config):
         doa.locate_sources(xs, xn, freq_range=args.freq_range, auto_identify=True)
     plot_music_spectra(doa, output_dir=output_dir)
     np.save(f"{output_dir}/decomposed_values.npy", np.array(doa.decomposed_values_strage))
+    np.save(f"{output_dir}/decomposed_vectors.npy", np.array(doa.decomposed_vectors_strage))
 
     # ans
     for basename, X_ncm in zip(["rev", "dir"], [X_ncm_rev, X_ncm_dir]):
@@ -87,6 +90,7 @@ def main(args, config):
             doa.locate_sources(xs, xn, freq_range=args.freq_range, auto_identify=True)
         plot_music_spectra(doa, output_dir=output_dir)
         np.save(f"{output_dir}/decomposed_values.npy", np.array(doa.decomposed_values_strage))
+        np.save(f"{output_dir}/decomposed_vectors.npy", np.array(doa.decomposed_vectors_strage))
 
     # frame_length = 200
     # diff
@@ -100,6 +104,7 @@ def main(args, config):
             doa.locate_sources(xs, xn, freq_range=args.freq_range, auto_identify=True, ncm_diff=0.05)
         plot_music_spectra(doa, output_dir=output_dir)
         np.save(f"{output_dir}/decomposed_values.npy", np.array(doa.decomposed_values_strage))
+        np.save(f"{output_dir}/decomposed_vectors.npy", np.array(doa.decomposed_vectors_strage))
 
 
 if __name__ == "__main__":

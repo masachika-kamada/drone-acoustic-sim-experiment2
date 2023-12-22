@@ -1,6 +1,6 @@
 pra:
   room:
-    room_dim: [10, 5]  # [x, y]
+    room_dim: [10, 6]  # [x, y]
     fs: 16000
     max_order: 6
     floor:
@@ -14,12 +14,15 @@ pra:
 
 voice:
   source:
-    - file_path: "data/raw/sample/arctic_a0001.wav"
-      position: [3.5, 0.5]
-      start_time: 0
+    # - file_path: "data/raw/sample/arctic_a0001.wav"
+    #   position: [3.5, 0.5]
+    #   start_time: 0
     - file_path: "data/raw/sample/arctic_a0002.wav"
-      position: [-0.5, 0.4]
+      position: [-2.8, -0.2]
       start_time: 0.1
+    # - file_path: "data/raw/sample/arctic_a0003.wav"
+    #   position: [-3, -0.3]
+    #   start_time: 0
 
 drone:
   mic_positions:
@@ -28,9 +31,9 @@ drone:
     phi0: 0
     radius: 0.1
   propeller:
-    offset: [0.5, 0.2]
+    offset: [0, 0.5]
     width: 0.45
-  snr: 1
+  snr: 0
   source:
     - file_path: "data/processed/propeller/p2000_2/dst.wav"
       start_time: 1
